@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Escalas de medida
+## Escalas de medida 
 
 ###Nominal
 ```{r}
@@ -60,11 +60,8 @@ posmin=which.min(tempk);posmin
 plot(tempk,type='l')
 abline(v=c(posmin,posmax), col=c('blue','red'))
 rgk
-
-
-
-
 ```
+
 ```{r}
 clorofila_t0=350
 clorofila_tf=400
@@ -76,9 +73,105 @@ rltclf= 100*(absclf)/(clorofila_t0); rltclf
 
 
 ```
+
 ¿El cero de la escala existe o no existe?
 Ejemplo de la temperatura
 
-```{r}
+### Razon
+
+En esta escala el cero representa ausencia de las caracteristicas que se esta midiendo. presenta cero real. Permite la operacion de cocientes
+
+ejemplos: temperatura en la escala kelvin, crecimiento, area foliar.
+
+```{r} 
+#En kelvin los cocinetes tienen sentido
+
+tempk=rnorm(120,14.5,1.3)+273
 
 ```
+
+
+## Transformación homotética
+
+```{r}
+```
+
+## Error estándar
+
+$$ SE=\frac{s}{\sqrt{n}}$$
+
+### EJemplo de una matriz en latex
+
+$$
+A_{m,n} = 
+\begin{pmatrix}
+8 & 5 & 4 & -1 \\
+a_{2,1} & a_{2,2} & \cdots & a_{2,n} \\
+\vdots  & \vdots  & \ddots & \vdots  \\
+a_{m,1} & a_{m,2} & \cdots & a_{m,n} 
+\end{pmatrix}
+$$
+#### Ejemplo de modelo de diseño en latex
+
+$$y_{ijk}=\mu+\tau_i+\beta_j+(\tau \beta)_{ij}+\epsilon_{ijk}$$
+# Explicacion de Error estándar
+
+```{r}
+set.seed(123)
+biom= rnorm(120,4,0.5)
+hilera= gl (4,30,120, labels=paste0('H',1:4))
+df=data.frame(Biomasa=biom,Surco=hilera)
+head(df)
+```
+
+
+```{r}
+library(psych)
+describe(df$Biomasa)
+
+```
+```{r}
+se_malo=sd(df$Biomasa)/sqrt(length(df$Biomasa));se_malo
+```
+Solo se tiene una media, una cosa distinta si tuviera la media de cada hilera
+n sería uno.
+impicaría que SE=DE
+
+$$ SE=\frac{s}{\sqrt{n}}$$
+Error estándar-> variabiliadd de los promedios, solo se tiene un promedio. 
+```{r}
+describe(df$Biomasa,df$Surco)
+?describe
+
+```
+```{r}
+#promedios de biomasa por surco, se tienen 4 medias diferentes
+medias=tapply(df$Biomasa,df$Surco,mean);medias
+#err estantar
+ee_bueno=sd(medias); ee_bueno
+```
+######mal uso del ee
+En el estadpstico t, el denominador es el error estándar
+$$t=\frac{\bar{x}-\mu_0}{s/\sqrt{n}}$$
+
+$$H_0:\mu_{pH}\geq4$$
+
+$$H_a:\mu_{pH}<4$$
+
+```{r}
+set.seed(123)
+pH=rnorm(120, 3.8,0.2)
+mean(pH)
+desv=sd(pH); desv
+eem=desv/mean(pH)# ee malo
+
+tcal=(mean(pH)-4)/eem; tcal
+ttab=qt(p=0.05,df=119, lower.tail=T); ttab# la alterna es menor que, grados de libertad numero menos 1
+
+```
+Tabulado -1.66, calculado -12.1, se rechaza Ho. falso: n=1 en el ee
+el ensayo no se hizo con n=120 muestras, fue un solo promedio
+
+### Métodos Bootstrap
+
+leer sdobre remuestreo (bootstrap), como calcular de: diferencia de medias, proporcion, diferencia de proporciones. Leer sobre estimulacion montecarlo
