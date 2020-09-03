@@ -1,0 +1,64 @@
+---
+title: "Métodos Bootstrap"
+author: "Sergio A Hernández"
+date: "2/9/2020"
+output: html_document
+---
+
+# Métodos de remuestreo y validación de modelos: Validación cruzada y Bootstrap
+
+## Introducción 
+
+Se trata de métodos no paramétricos, que no requieren ninguna asunción sobre la distribución de la población.
+
+    El método de bootstrap se puede aplicar para cuantificar la incertidumbre asociada a un determinado estimador o método de aprendizaje estadístico. Por ejemplo, se puede utilizar para estimar el error estándar (SE) de los coeficientes de un modelo de regresión lineal (en este caso se utilizan fórmulas matemáticas que R implementa automáticamente, aunque el resultado sería válido siempre y cuando las condiciones para su aplicación se cumplan, mientras que el bootstrap no requiere de condiciones previas).
+
+     En la práctica, raramente se puede disponer reiteradamente de nuevas muestras o set de datos independientes de la población original. El bootstrap lo que nos permite es emular el proceso de obtención de nuevas muestras utilizando nuestro set de datos único con las que podemos por ejemplo estimar la variabilidad/precisión asociada a un parámetro estimado, sin la necesidad de repetir el muestreo (cuando esto no es posible). El muestreo se lleva a cabo con sustitución (with replacement), lo que implica que una misma observación puede ser seleccionada más de una vez dentro de un mismo set de datos de bootstrap, y el tamaño de cada pseudomuestra es del mismo tamaño que la muestra original.
+     
+```{r}
+library(gplots)
+library(ggplot2)
+(x<-round(runif(50, min=0, max=5),2))
+ mean(x)
+(sample(x,25))
+(sample(x,25,replace=T))#Alguna podría salir repetida 
+mean(x[sample(1:length(x),50)])
+mean(x[sample(1:length(x),50, replace=T)])
+
+Resultado<-rep(0,1000)
+for(i in 1:1000){
+  Resultado[i]<-mean(x[sample(1:length(x),50,replace=T)])
+}
+hist(Resultado)
+```
+#EJemplo 2
+```{r}
+library(ggplot2)
+library(tidyverse)
+set.seed(123         )
+#Numero de Huracanes en doscientos años
+
+(muestra<-rpois(n=200,lambda=30))
+(xbarra<-mean(muestra))
+sqrt(30/sqrt(200))# En la distribucion varianza es igual a la media
+
+# Solo conocemos una muestra de huracanes, la idea es estimar el EE de la media muestral
+
+(sample(muestra,replace=T))
+Bootstrap<-replicate(n=10000,sample(muestra, replace=T))
+dim(Bootstrap)
+
+medias<-apply(Bootstrap, MARGIN=1,MArgin=2,FUN=mean)
+medias
+
+# Error Estandar?
+##Calcular EE con la media muestral
+
+sqrt(sum((medias-xbarra)^2)/ncol(Bootstrap))
+ggplot()+geom_histogram(aes(x=medias),bins=50,color="black",fill="white")+
+  geom_vline(xintercept=xbarra,sizew=1,color="red")
+```
+
+
+
+     

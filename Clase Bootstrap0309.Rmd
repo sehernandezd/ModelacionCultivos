@@ -1,0 +1,251 @@
+---
+title: "Bootstrap Clase 0309"
+author: "Sergio A Hernández"
+date: "3/9/2020"
+output: html_document
+---
+
+#Bootstrap
+
+Error Estandar
+$$
+t=\frac{x-\mu}{\frac{s}{\sqrt(n)}}
+$$
+
+Intervalo de confianza
+
+$$
+t=(x1-x2)-(\mu_1-\mu_2)
+$$
+
+$$
+IC=prob(li<=\mu<=Ls)=1-\alpha
+$$
+$$
+\frac{x-t(\frac{s}{\sqrt(n)})<=}{n} EE= \frac{s}{\sqrt n } -> Arreglar
+$$
+Se tienen dos variables Mareria Organica y otra
+Se saca correlación, la hipotesis de que la correlacion es cero sobre la alterna que no es cero
+se requiere el EE de la correlación
+con un solo coeficiente de correlación no es suficiente.
+
+*No se puede hacer inferencia ya que no podemos medir el EE*
+
+##Regresión Simple
+```{r}
+set.seed(1234)
+mo=sort(rnorm(n=120,mean=2,sd=0.2))
+CIC=sort(rnorm(n=120,mean=10,sd=1.5))#Capacidad de intercambio cationico
+plot(mo,CIC)
+cor# Correlación alta ya que se ordenaron los datos
+```
+```{r}
+##MOdelo de regresión lineal
+mod=lm(CIC~mo)
+summary(mod)
+# AParece el EE pero no tiene sentido
+```
+$$Modelo~ajustado:\\ \hat{CIC}=-6.48+8.45Mo$$
+### Test de correlación
+$$Ho: \rho=0\\Ha:\rho\neq0$$
+```{r}
+#Prueba d ecorrelación
+ctest=cor.test(CIC,mo, alternative='t', conf.level=0.95, method='pearson')
+# Es de dos colas
+ifelse(ctest$p.value<0.05,'Rechazo Ho', 'No rechazo Ho')
+```
+
+
+
+### Introducción al remuestreo
+#### entendiendo Bootstrap
+
+
+Para el conjunto de datos del proyecto para evaluar la competición de un cultivo de papa , el peso fresco promedio de tubérculos para cierta densidad de siembra fue de 438g, en una muestra de 561 plantas. Estamos interesados en la $$\mu$$, el verdadero peso promedio para todas las plantas sembradas en la misma densidad, de la misma variedad y manejadas agronómicamente de forma parigual.
+
+Esta muy seguramente no es la misma media que el valor obtenido deen la muestra. Ya hemos mendionado que diferentes muestras del mismo tamaño producirán diferentes medias muestrales ¿como podemos medir con precision de 438g con la misma estimación de $$\mu$$?
+
+Si supieramos la distribución muestral de las medias muestrales para muestras de tamaño 561 de la población de asociada al mismo cultivoen las condiciones antes mencionadas, esto nos daría una idea de como las medias varían dwe muestra a muestra,  y el error estándar del muestreo distribución nos diría que tan lejosde la muestra se desvía de la media poblacional $$\mu$$
+Pero por supuesto, , ya que no tenemos todos lospesos, no podemos generarla distirbución de muestreo (si tuvieramos todos los pesos, sabríanmos el verdadero $$\mu$$
+
+**Bootstrap**: Es un procedimiento que usa la muestra para crear una nueva distribución, llamada distribución Bootstrap, que se aproxima a la distirbución de muestreo para la media muestral (o para todas las estadísticas)
+
+
+Nota: El promedio de todos los promedios es un estimador de la verdadera media, los promedios tienen una media global que converge a la verdadera media.
+
+
+```{r}
+library(gtools)
+data=c(260,195,335,320)
+# TOdas las posibles muestras de tamaño 3 tal como el vector
+df=data.frame(permutations(n=4,r=4,v= data,repeats.allowed=T))
+View(df)
+rowMeans(df)
+df2=data.frame(df,rowMeans(df))
+colnames(df2)=c("x1","x2","x3","x4","Media(x)")
+View(df2)
+hist(df2$`Media(x)`,xlim=c(100,400))
+rug(df2$`Media(x)`)
+abline(v=mean(df2$`Media(x)`),col='red',lwd=2,lty=2)
+rowMeans(df)
+
+```
+Medida de como variaron las medias
+
+```{r}
+(eeb=sd(df2$`Media(x)`))
+media=mean(df2$`Media(x)`)
+
+hist(df2$`Media(x)`,xlim=c(100,400))
+rug(df2$`Media(x)`)
+abline(v=media-eeb,col='red',lwd=2,lty=2)
+abline(v=media+eeb,col='red',lwd=2,lty=2)
+abline(v=mean(df2$`Media(x)`),col='blue',lwd=2,lty=2)
+abline(v=media-2*eeb,col='yellow',lwd=2,lty=2)
+abline(v=media+2*eeb,col='yellow',lwd=2,lty=2)
+segments(media-2*eeb,5,x1=media+2*eeb,5)
+text(205,5.4,'+-2EE')
+
+
+```
+
+***hay aparecen dos barras de EE a la izquierda y derecha de la media, cae el 64% de los datos, a dos errores estándar que implica el 95% de los datos***
+
+*Es un intervalo de confianza BOotstrap, puedo mirar las cosas sin hacer pruebas de hipotesis*
+
+# entendiendo Bootstrap
+
+
+```{r}
+muestra.gamma<-rgamma(3,1,1/2)
+N<-15
+mi.bootstrap<-numeric(N)
+for(i in 1:N)
+{
+  x<-sample(muestra.gamma,3,replace=T)
+  mi.bootstrap[i]<-mean(x)
+}
+hist(mi.bootstrap,col="blue")
+mean(mi.bootstrap)
+sd(mi.bootstrap)
+
+#media global,. histograma como oscila la media a uno y dos ee
+```
+# Papel de Bootstrap en Agronomia
+
+Apoyese ene l códifgo para halla el intervalo de confianza Bootstrap para el coeficiente de correlacion entre MO y OpH para hallar el intervalo del coeficiente de tdeterminación $$R^2$$ para un conjunto de datos de creciemiento (w) contra el tiempo(t) obtenidos para uncultivo en particular. Realice 500 réplicas para obtener el intervalo. Interprete los resultados. Discuta la diferencia entre los 4 tipos de intervalos de confianza
+
+
+```{r}
+# Obtener el coeficiente de correlacion de Bootstrap para el siguiente
+#conjunto de datos}
+set.seed(1964)
+MO = sort(rnorm(90, 2, 0.25))
+pH = sort(runif(90, 5.2, 6.2))
+quimi = data.frame(MO, pH)
+cor(MO, pH)
+r2=cor(MO, pH)**2
+r2*100
+```
+
+```{r}
+fcorr <- function(datos, obs){
+  d2 <- quimi[obs, ]
+  return(cor(d2$MO, d2$pH))
+```
+
+```{r}
+
+
+
+
+fcorr <- function(datos, obs){
+  d2 <- quimi[obs, ]
+  return(cor(d2$MO, d2$pH))
+}
+library(boot)
+set.seed(1964)
+bootcorrP <-  boot(quimi, fcorr, R = 500)
+bootcorrP
+mean(bootcorrP$t)
+sd(bootcorrP$t)
+plot(bootcorrP)
+boot.ci(bootcorrP, type = c('norm', 'basic', 'perc', 'bca'))
+
+```
+*La MO y pH estan estrechamente correlacionadas*
+
+# Relación carbono nitrogeno
+```{r}
+set.seed(1964)
+C=sort(rnorm(90,0.15,0.02))
+N=sort(rnorm(90,0.30,0.05))
+rCN=C/N
+quimi=data.frame(C,N,rCN)
+head(quimi)
+(media=mean$quimi$rCN))# 1 sola media, estimador puntual
+```
+
+######Por que se comportan inestable
+
+# Modelos no lineales
+  - Con respecto a dos variables
+  
+  $$\gamma=\gamma_{max}(1-e^{-bx})^c$$
+```{r}
+chapmr<- function (x,asin,b,c) asin*(1-exp(-b*x)^c)
+
+curve(chapmr(x,asin=100,b=0.15,c=3),from=0,to=50,ylab="y")
+y=chapmr(0:50,asin=199,b=0.15,c=3)
+data=data.frame(x=0:50,7)
+library(manipulate)
+manipulate(
+  plot(data,xlim=c(x.min,x.max),ylim=c(0,asin),type=tipo,axes=axes,ann=label),
+x.min=slider(0,10),
+x.max=slider(40,50),
+c=slider(1,15),
+b=slider(0,1),
+asin=slider(50,150),
+tipo= picker("p","l","b","c","o","h","s","S","n"),
+axes=checkbox(TRUE, "dibujar ejes"),
+label=checkbox(FALSE, "dibujar ejes "))
+```
+  
+  
+
+## Modelo de minimos cuadrados
+  - Modelos de crecimiento de cultivos 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
